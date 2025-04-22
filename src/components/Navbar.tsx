@@ -1,8 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { Menu, LogOut, User } from "lucide-react";
-import { useState } from "react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -18,19 +18,8 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const location = useLocation();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userCoins, setUserCoins] = useState(0);
-
-  // Mock login function for demonstration
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setUserCoins(500); // Start with 500 coins
-  };
-
-  // Mock logout function for demonstration
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   // Get page title based on current path
   const getPageTitle = () => {
@@ -39,12 +28,18 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     if (path === "/gacha") return "Gacha";
     if (path === "/quest") return "Quests";
     if (path === "/token") return "Redeem Token";
-    if (path === "/admin") return "Admin Dashboard";
-    if (path.startsWith("/admin/")) {
+    if (path.startsWith("/token/")) return "Redeem Token";
+    if (path === "/adminyangtahu") return "Admin Dashboard";
+    if (path.startsWith("/adminyangtahu/")) {
       const section = path.split("/")[2];
       return `Admin - ${section.charAt(0).toUpperCase() + section.slice(1)}`;
     }
     return "Alt Gacha Haven";
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -67,10 +62,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </div>
         
         <div className="flex items-center gap-4">
-          {isLoggedIn ? (
+          {isAuthenticated && user ? (
             <>
               <div className="bg-muted px-3 py-1 rounded-full text-sm font-medium">
-                {userCoins} coins
+                {user.coins} coins
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -79,11 +74,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel>{user.name || user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">Profile</Link>
-                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/adminyangtahu">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
@@ -92,7 +89,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               </DropdownMenu>
             </>
           ) : (
-            <Button onClick={handleLogin}>Login</Button>
+            <Button onClick={() => navigate("/login")}>Login</Button>
           )}
         </div>
       </div>

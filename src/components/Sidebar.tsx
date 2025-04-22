@@ -12,11 +12,10 @@ import {
   User,
   Database,
   Settings,
-  CircleUser,
   PanelRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarProps {
   open: boolean;
@@ -46,12 +45,7 @@ const SidebarLink = ({ to, icon: Icon, label, active }: SidebarLinkProps) => (
 
 export default function Sidebar({ open, setOpen }: SidebarProps) {
   const location = useLocation();
-  const [isAdmin, setIsAdmin] = useState(false); // Mock admin status
-
-  // Mock function to toggle admin mode
-  const toggleAdminMode = () => {
-    setIsAdmin(!isAdmin);
-  };
+  const { isAdmin } = useAuth();
 
   // Check if the current path matches the given route
   const isActive = (route: string) => {
@@ -96,28 +90,15 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             </>
           ) : (
             <>
-              <SidebarLink to="/admin" icon={LayoutDashboard} label="Admin Dashboard" active={isActive("/admin")} />
-              <SidebarLink to="/admin/users" icon={User} label="Users" active={isActive("/admin/users")} />
-              <SidebarLink to="/admin/accounts" icon={Database} label="Alt Accounts" active={isActive("/admin/accounts")} />
-              <SidebarLink to="/admin/cases" icon={Gift} label="Case Types" active={isActive("/admin/cases")} />
-              <SidebarLink to="/admin/tokens" icon={Ticket} label="Token Generator" active={isActive("/admin/tokens")} />
-              <SidebarLink to="/admin/gacha-history" icon={Award} label="Gacha History" active={isActive("/admin/gacha-history")} />
-              <SidebarLink to="/admin/settings" icon={Settings} label="Settings" active={isActive("/admin/settings")} />
+              <SidebarLink to="/adminyangtahu" icon={LayoutDashboard} label="Admin Dashboard" active={isActive("/adminyangtahu")} />
+              <SidebarLink to="/adminyangtahu/users" icon={User} label="Users" active={isActive("/adminyangtahu/users")} />
+              <SidebarLink to="/adminyangtahu/accounts" icon={Database} label="Alt Accounts" active={isActive("/adminyangtahu/accounts")} />
+              <SidebarLink to="/adminyangtahu/tokens" icon={Ticket} label="Token Generator" active={isActive("/adminyangtahu/tokens")} />
+              <SidebarLink to="/adminyangtahu/settings" icon={Settings} label="Settings" active={isActive("/adminyangtahu/settings")} />
             </>
           )}
         </div>
       </ScrollArea>
-      
-      <div className="mt-auto p-4 border-t">
-        <Button
-          variant="outline"
-          className="w-full flex items-center gap-2"
-          onClick={toggleAdminMode}
-        >
-          <CircleUser className="h-5 w-5" />
-          {isAdmin ? "User Mode" : "Admin Mode"}
-        </Button>
-      </div>
     </aside>
   );
 }

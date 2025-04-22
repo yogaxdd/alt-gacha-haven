@@ -4,33 +4,78 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Gift, Award, Ticket, Coins, Clock } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/context/AuthContext";
 
 interface GachaRecord {
-  id: string;
+  userId: string;
   caseType: string;
-  account: string;
+  cost: number;
+  accounts: any[];
   date: string;
-  color: string;
 }
 
 export default function Dashboard() {
-  const [coins, setCoins] = useState(500);
+  const { user } = useAuth();
   const [unclaimedQuests, setUnclaimedQuests] = useState(2);
   const [gachaRecords, setGachaRecords] = useState<GachaRecord[]>([]);
   
-  // Mock data for gacha records
+  // Load gacha records from localStorage
   useEffect(() => {
-    const mockRecords = [
-      { id: "1", caseType: "Common", account: "user123", date: "2 mins ago", color: "bg-gray-500" },
-      { id: "2", caseType: "Rare", account: "cooluser@gmail.com", date: "3 hours ago", color: "bg-blue-500" },
-      { id: "3", caseType: "Epic", account: "gamer456", date: "Yesterday", color: "bg-purple-500" },
-    ];
-    setGachaRecords(mockRecords);
+    const loadGachaRecords = () => {
+      try {
+        const savedRecords = localStorage.getItem('gachaRecords');
+        if (savedRecords) {
+          const records = JSON.parse(savedRecords);
+          setGachaRecords(records);
+        }
+      } catch (error) {
+        console.error("Error loading gacha records:", error);
+      }
+    };
+    
+    loadGachaRecords();
   }, []);
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      
+      // Calculate difference in milliseconds
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      if (diffMins < 60) {
+        return diffMins <= 1 ? "just now" : `${diffMins} mins ago`;
+      } else if (diffHours < 24) {
+        return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+      } else if (diffDays < 7) {
+        return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+      } else {
+        return date.toLocaleDateString();
+      }
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
+  // Get case color class based on case type
+  const getCaseColorClass = (caseType: string) => {
+    switch (caseType.toLowerCase()) {
+      case "common": return "bg-gray-500";
+      case "rare": return "bg-blue-500";
+      case "epic": return "bg-purple-500";
+      case "legendary": return "bg-orange-500";
+      case "mythic": return "bg-red-500";
+      default: return "bg-gray-500";
+    }
+  };
 
   return (
     <Layout>
@@ -43,9 +88,9 @@ export default function Dashboard() {
               <Coins className="h-4 w-4 text-yellow-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{coins} coins</div>
+              <div className="text-2xl font-bold">{user?.coins || 0} coins</div>
               <p className="text-xs text-muted-foreground">
-                +200 coins earned this week
+                Earn more coins by completing quests
               </p>
             </CardContent>
             <CardFooter>
@@ -85,9 +130,9 @@ export default function Dashboard() {
               <Gift className="h-4 w-4 text-rose-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3 accounts</div>
+              <div className="text-2xl font-bold">{gachaRecords.reduce((acc, record) => acc + record.accounts.length, 0)} accounts</div>
               <p className="text-xs text-muted-foreground">
-                Last pull: 2 hours ago
+                Last pull: {gachaRecords.length > 0 ? formatDate(gachaRecords[0].date) : "Never"}
               </p>
             </CardContent>
             <CardFooter>
@@ -111,17 +156,20 @@ export default function Dashboard() {
           <CardContent>
             <ScrollArea className="h-[300px]">
               <div className="space-y-4">
-                {gachaRecords.map((record) => (
-                  <div key={record.id} className="flex items-center gap-4">
-                    <div className={`w-2 h-12 rounded-full ${record.color}`}></div>
+                {gachaRecords.map((record, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <div className={`w-2 h-12 rounded-full ${getCaseColorClass(record.caseType)}`}></div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{record.caseType} Case</p>
+                        <p className="text-sm font-medium">{record.caseType} Case ({record.accounts.length} accounts)</p>
                         <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="mr-1 h-3 w-3" /> {record.date}
+                          <Clock className="mr-1 h-3 w-3" /> {formatDate(record.date)}
                         </div>
                       </div>
-                      <p className="text-xs">{record.account}</p>
+                      <p className="text-xs truncate">
+                        {record.accounts.map((acc: any) => acc.email).slice(0, 2).join(", ")}
+                        {record.accounts.length > 2 ? ` and ${record.accounts.length - 2} more` : ""}
+                      </p>
                     </div>
                   </div>
                 ))}

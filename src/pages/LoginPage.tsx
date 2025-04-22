@@ -14,9 +14,12 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -32,31 +35,37 @@ export default function LoginPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
+
   // Handle login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
     
-    // Mock login for admin
-    if (loginEmail === "admin@yogakokxd.com" && loginPassword === "admin123") {
-      setTimeout(() => {
-        toast.success("Logged in as Admin");
-        navigate("/admin");
-        setIsLoggingIn(false);
-      }, 1000);
-      return;
-    }
-    
-    // Mock login for regular users
-    setTimeout(() => {
-      toast.success("Logged in successfully");
-      navigate("/");
+    try {
+      const success = await login(loginEmail, loginPassword);
+      
+      if (success) {
+        toast.success("Logged in successfully");
+        navigate("/");
+      } else {
+        toast.error("Invalid email or password");
+      }
+    } catch (error) {
+      toast.error("An error occurred during login");
+      console.error(error);
+    } finally {
       setIsLoggingIn(false);
-    }, 1000);
+    }
   };
 
   // Handle registration
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsRegistering(true);
     
@@ -67,12 +76,23 @@ export default function LoginPage() {
       return;
     }
     
-    // Mock registration
-    setTimeout(() => {
-      toast.success("Account created successfully");
-      navigate("/");
+    try {
+      // In a real app, we would call a registration API
+      // For now, we'll just log in the user after registration
+      const success = await login(registerEmail, registerPassword);
+      
+      if (success) {
+        toast.success("Account created successfully");
+        navigate("/");
+      } else {
+        toast.error("Failed to create account");
+      }
+    } catch (error) {
+      toast.error("An error occurred during registration");
+      console.error(error);
+    } finally {
       setIsRegistering(false);
-    }, 1000);
+    }
   };
 
   return (
