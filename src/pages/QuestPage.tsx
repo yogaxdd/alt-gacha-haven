@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/sonner";
 import { Award, MessageCircle, Coins, Star } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface Quest {
   id: string;
@@ -15,39 +16,43 @@ interface Quest {
   reward: number;
   icon: React.ReactNode;
   completed: boolean;
+  url?: string;
   cooldown?: number;
 }
 
 export default function QuestPage() {
-  const [userCoins, setUserCoins] = useState(500);
+  const { user, updateCoins } = useAuth();
   const [dailyProgress, setDailyProgress] = useState(0);
   const [quests, setQuests] = useState<Quest[]>([
     {
       id: "1",
       type: "social",
-      title: "Follow on TikTok",
-      description: "Follow our TikTok channel to earn coins",
+      title: "Follow on Instagram",
+      description: "Follow @yogakokxd on Instagram to earn coins",
       reward: 100,
       icon: <MessageCircle className="h-5 w-5" />,
       completed: false,
+      url: "https://www.instagram.com/yogakokxd/",
     },
     {
       id: "2",
       type: "social",
-      title: "Follow on Instagram",
-      description: "Follow our Instagram page to earn coins",
+      title: "Follow on TikTok",
+      description: "Follow @yogakokxd on TikTok to earn coins",
       reward: 150,
       icon: <MessageCircle className="h-5 w-5" />,
       completed: false,
+      url: "http://tiktok.com/@yogakokxd",
     },
     {
       id: "3",
       type: "content",
       title: "Subscribe on YouTube",
-      description: "Subscribe to our YouTube channel to earn coins",
+      description: "Subscribe to YogaxD on YouTube to earn coins",
       reward: 200,
       icon: <Star className="h-5 w-5" />,
       completed: false,
+      url: "https://youtube.com/YogaxD",
     },
     {
       id: "4",
@@ -61,18 +66,59 @@ export default function QuestPage() {
     },
   ]);
 
+  // Load completed quests from localStorage on mount
+  useState(() => {
+    const savedQuests = localStorage.getItem("completedQuests");
+    if (savedQuests) {
+      const completedQuestIds = JSON.parse(savedQuests);
+      setQuests(quests.map(quest => 
+        completedQuestIds.includes(quest.id) ? {...quest, completed: true} : quest
+      ));
+      
+      // Calculate progress
+      const completedCount = completedQuestIds.length;
+      setDailyProgress(Math.min((completedCount / quests.length) * 100, 100));
+    }
+  });
+
   // Function to complete a quest
   const completeQuest = (questId: string) => {
+    const quest = quests.find(q => q.id === questId);
+    if (!quest || quest.completed) return;
+    
+    // Get completed quests from localStorage
+    const savedQuests = localStorage.getItem("completedQuests");
+    const completedQuestIds = savedQuests ? JSON.parse(savedQuests) : [];
+    
+    // Check if quest is already completed
+    if (completedQuestIds.includes(questId)) {
+      toast.error("You've already completed this quest!");
+      return;
+    }
+    
+    // Update quests state
     setQuests(quests.map(quest => {
       if (quest.id === questId) {
         // Add quest reward to user's balance
-        setUserCoins(prev => prev + quest.reward);
+        if (user) {
+          updateCoins(user.coins + quest.reward);
+        }
         
         // Update daily progress
-        setDailyProgress(prev => Math.min(prev + 25, 100));
+        const newCompletedCount = completedQuestIds.length + 1;
+        setDailyProgress(Math.min((newCompletedCount / quests.length) * 100, 100));
         
         // Show success toast
         toast.success(`+${quest.reward} coins added to your balance!`);
+        
+        // Save completed quest to localStorage
+        const updatedCompletedQuests = [...completedQuestIds, questId];
+        localStorage.setItem("completedQuests", JSON.stringify(updatedCompletedQuests));
+        
+        // If it's a URL quest, open the URL in a new tab
+        if (quest.url) {
+          window.open(quest.url, "_blank");
+        }
         
         // Mark quest as completed
         return { ...quest, completed: true };
@@ -85,6 +131,19 @@ export default function QuestPage() {
   const completedQuests = quests.filter(quest => quest.completed).length;
   const totalQuests = quests.length;
   const questCompletionText = `${completedQuests}/${totalQuests} quests completed`;
+  
+  // Check if all quests are completed and bonus not yet awarded
+  useState(() => {
+    if (dailyProgress === 100) {
+      const bonusAwarded = localStorage.getItem("dailyBonusAwarded");
+      if (bonusAwarded !== "true" && user) {
+        // Award bonus coins
+        updateCoins(user.coins + 200);
+        toast.success("All daily quests completed! +200 bonus coins awarded!");
+        localStorage.setItem("dailyBonusAwarded", "true");
+      }
+    }
+  });
 
   return (
     <Layout>
@@ -96,7 +155,7 @@ export default function QuestPage() {
           </div>
           <div className="flex items-center gap-2">
             <Coins className="h-5 w-5 text-yellow-400" />
-            <span className="font-bold">{userCoins} coins</span>
+            <span className="font-bold">{user?.coins || 0} coins</span>
           </div>
         </div>
         
