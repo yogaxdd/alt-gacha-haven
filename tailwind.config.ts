@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Gacha rarity colors
+				rarity: {
+					common: '#9CA3AF',
+					rare: '#3B82F6',
+					epic: '#8B5CF6',
+					legendary: '#F59E0B',
+					mythic: '#EF4444',
 				}
 			},
 			borderRadius: {
@@ -84,12 +93,32 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'card-flip': {
+					'0%, 100%': { transform: 'rotateY(0deg)' },
+					'50%': { transform: 'rotateY(180deg)' },
+				},
+				'shine': {
+					'0%': { backgroundPosition: '0% 50%' },
+					'100%': { backgroundPosition: '200% 50%' },
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'card-flip': 'card-flip 1s ease-in-out',
+				'shine': 'shine 2s linear infinite',
+				'float': 'float 3s ease-in-out infinite',
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+				'hero-pattern': "url('/assets/hero-pattern.svg')",
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
