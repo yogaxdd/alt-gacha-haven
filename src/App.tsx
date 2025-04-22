@@ -18,7 +18,14 @@ import TokenGenerator from "./pages/admin/TokenGenerator";
 // Context
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -77,12 +84,13 @@ const AppRoutes = () => {
   );
 };
 
+// Add a hashRouter wrapper to fix the refresh issue
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster position="top-right" />
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename="/">
           <AppRoutes />
         </BrowserRouter>
       </AuthProvider>

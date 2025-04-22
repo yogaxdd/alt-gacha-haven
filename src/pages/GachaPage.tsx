@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Coins } from "lucide-react";
+import { Coins, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface CaseType {
@@ -193,9 +193,16 @@ export default function GachaPage() {
           </div>
         </div>
         
-        <p className="text-muted-foreground">
-          Select a case type and try your luck to get random alt accounts!
-        </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-blue-700">
+                Select a case type and try your luck to get random alt accounts! These accounts are for <span className="font-bold">Moonton</span> login only, not for other services.
+              </p>
+            </div>
+          </div>
+        </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {caseTypes.map((caseType) => (
@@ -269,7 +276,7 @@ export default function GachaPage() {
                 {selectedCase?.name} Accounts Unlocked!
               </DialogTitle>
               <DialogDescription className="text-center">
-                You've obtained {gachaResults.length} new alt accounts
+                You've obtained {gachaResults.length} new <span className="font-bold">Moonton</span> alt accounts
               </DialogDescription>
             </DialogHeader>
             
@@ -278,7 +285,7 @@ export default function GachaPage() {
                 {gachaResults.map((account, index) => (
                   <div 
                     key={index} 
-                    className={`p-4 rounded-lg text-white ${selectedCase?.className}`}
+                    className={`p-4 rounded-lg text-white ${selectedCase?.className} cursor-pointer hover:opacity-90 transition-opacity`}
                     onClick={() => handleCopyAccount(account)}
                   >
                     <div className="space-y-1">

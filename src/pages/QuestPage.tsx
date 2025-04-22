@@ -29,7 +29,7 @@ export default function QuestPage() {
       type: "social",
       title: "Follow on Instagram",
       description: "Follow @yogakokxd on Instagram to earn coins",
-      reward: 100,
+      reward: 50, // Updated to 50 coins
       icon: <MessageCircle className="h-5 w-5" />,
       completed: false,
       url: "https://www.instagram.com/yogakokxd/",
@@ -39,7 +39,7 @@ export default function QuestPage() {
       type: "social",
       title: "Follow on TikTok",
       description: "Follow @yogakokxd on TikTok to earn coins",
-      reward: 150,
+      reward: 50, // Updated to 50 coins
       icon: <MessageCircle className="h-5 w-5" />,
       completed: false,
       url: "http://tiktok.com/@yogakokxd",
@@ -49,7 +49,7 @@ export default function QuestPage() {
       type: "content",
       title: "Subscribe on YouTube",
       description: "Subscribe to YogaxD on YouTube to earn coins",
-      reward: 200,
+      reward: 50, // Updated to 50 coins
       icon: <Star className="h-5 w-5" />,
       completed: false,
       url: "https://youtube.com/YogaxD",
@@ -59,10 +59,19 @@ export default function QuestPage() {
       type: "ad",
       title: "Watch an Ad",
       description: "Watch a short advertisement to earn coins",
-      reward: 50,
+      reward: 50, // Updated to 50 coins
       icon: <Coins className="h-5 w-5" />,
       completed: false,
       cooldown: 15, // Cooldown in minutes
+    },
+    {
+      id: "5",
+      type: "referral",
+      title: "Refer a Friend",
+      description: "Invite a friend to join Alt Gacha Haven",
+      reward: 50, // 50 coins per referral
+      icon: <Award className="h-5 w-5" />,
+      completed: false,
     },
   ]);
 
@@ -120,11 +129,26 @@ export default function QuestPage() {
           window.open(quest.url, "_blank");
         }
         
+        // Generate referral code if it's the referral quest
+        if (quest.id === "5") {
+          const referralCode = `REF-${user?.id}-${Date.now()}`;
+          localStorage.setItem("referralCode", referralCode);
+          navigator.clipboard.writeText(`${window.location.origin}?ref=${referralCode}`);
+          toast.success("Referral link copied to clipboard!");
+        }
+        
         // Mark quest as completed
         return { ...quest, completed: true };
       }
       return quest;
     }));
+  };
+
+  // Generate referral link 
+  const getReferralLink = () => {
+    const referralCode = localStorage.getItem("referralCode") || 
+      `REF-${user?.id}-${Date.now()}`;
+    return `${window.location.origin}?ref=${referralCode}`;
   };
 
   // Calculate daily quest completion
@@ -193,6 +217,32 @@ export default function QuestPage() {
               )}
             </div>
           </CardContent>
+        </Card>
+        
+        {/* Referral System */}
+        <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-lg">Referral Program</CardTitle>
+            <CardDescription>Invite friends and earn 50 coins per referral</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-background p-3 rounded-md text-sm break-all mb-2">
+              {getReferralLink()}
+            </div>
+            <p className="text-xs text-muted-foreground">Share this link with your friends. When they sign up, you'll receive 50 coins!</p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => {
+                navigator.clipboard.writeText(getReferralLink());
+                toast.success("Referral link copied to clipboard!");
+              }}
+              className="w-full"
+              variant="outline"
+            >
+              Copy Referral Link
+            </Button>
+          </CardFooter>
         </Card>
         
         {/* Quest List */}

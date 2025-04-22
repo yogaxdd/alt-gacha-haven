@@ -8,6 +8,7 @@ import { Gift, Award, Ticket, Coins, Clock } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/components/ui/sonner";
 
 interface GachaRecord {
   userId: string;
@@ -21,8 +22,10 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [unclaimedQuests, setUnclaimedQuests] = useState(2);
   const [gachaRecords, setGachaRecords] = useState<GachaRecord[]>([]);
+  const [dailyStreakDay, setDailyStreakDay] = useState(3);
+  const [dailyClaimDone, setDailyClaimDone] = useState(false);
   
-  // Load gacha records from localStorage
+  // Load gacha records and daily streak from localStorage
   useEffect(() => {
     const loadGachaRecords = () => {
       try {
@@ -36,7 +39,26 @@ export default function Dashboard() {
       }
     };
     
+    const loadDailyStreak = () => {
+      try {
+        const streak = localStorage.getItem('dailyStreak');
+        if (streak) {
+          setDailyStreakDay(parseInt(streak));
+        }
+        
+        const lastClaimed = localStorage.getItem('lastDailyClaim');
+        if (lastClaimed) {
+          const lastDate = new Date(lastClaimed).setHours(0, 0, 0, 0);
+          const today = new Date().setHours(0, 0, 0, 0);
+          setDailyClaimDone(lastDate === today);
+        }
+      } catch (error) {
+        console.error("Error loading daily streak:", error);
+      }
+    };
+    
     loadGachaRecords();
+    loadDailyStreak();
   }, []);
 
   // Format date for display
@@ -74,6 +96,41 @@ export default function Dashboard() {
       case "legendary": return "bg-orange-500";
       case "mythic": return "bg-red-500";
       default: return "bg-gray-500";
+    }
+  };
+  
+  // Handle daily streak claim
+  const handleClaimDailyStreak = () => {
+    if (dailyClaimDone) {
+      toast.error("You've already claimed your daily reward today!");
+      return;
+    }
+    
+    // Update auth context with new coins
+    if (user) {
+      const { updateCoins } = useAuth();
+      const reward = dailyStreakDay * 50;
+      updateCoins(user.coins + reward);
+      toast.success(`Daily streak day ${dailyStreakDay}: +${reward} coins claimed!`);
+      
+      // Save to localStorage
+      const today = new Date().toISOString();
+      localStorage.setItem('lastDailyClaim', today);
+      localStorage.setItem('dailyStreak', (dailyStreakDay + 1).toString());
+      
+      setDailyClaimDone(true);
+      setDailyStreakDay(dailyStreakDay + 1);
+    }
+  };
+  
+  // Handle account copy
+  const handleCopyAccount = (record: GachaRecord, accountIndex: number) => {
+    if (record.accounts && record.accounts.length > accountIndex) {
+      const account = record.accounts[accountIndex];
+      const text = `${account.email}:${account.password}`;
+      navigator.clipboard.writeText(text)
+        .then(() => toast.success("Account copied to clipboard!"))
+        .catch(() => toast.error("Failed to copy account"));
     }
   };
 
@@ -166,10 +223,23 @@ export default function Dashboard() {
                           <Clock className="mr-1 h-3 w-3" /> {formatDate(record.date)}
                         </div>
                       </div>
-                      <p className="text-xs truncate">
-                        {record.accounts.map((acc: any) => acc.email).slice(0, 2).join(", ")}
-                        {record.accounts.length > 2 ? ` and ${record.accounts.length - 2} more` : ""}
-                      </p>
+                      <div className="space-y-1">
+                        {record.accounts.slice(0, 2).map((acc, accIndex) => (
+                          <div 
+                            key={accIndex} 
+                            className="text-xs truncate cursor-pointer hover:text-primary flex items-center"
+                            onClick={() => handleCopyAccount(record, accIndex)}
+                          >
+                            <span className="truncate">{acc.email}:{acc.password}</span>
+                            <span className="ml-1 text-xs text-muted-foreground">(click to copy)</span>
+                          </div>
+                        ))}
+                        {record.accounts.length > 2 && (
+                          <p className="text-xs text-muted-foreground">
+                            and {record.accounts.length - 2} more accounts...
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -199,18 +269,25 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <Progress value={40} className="h-2" />
+              <Progress value={dailyStreakDay * 100 / 7} className="h-2" />
               <div className="grid grid-cols-7 gap-2">
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                  <div key={day} className={`text-center ${day <= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <div key={day} className={`text-center ${day <= dailyStreakDay ? 'text-primary' : 'text-muted-foreground'}`}>
                     <div className={`w-full aspect-square rounded-md flex items-center justify-center mb-1 text-xs
-                      ${day <= 3 ? 'bg-primary/20 border border-primary/50' : 'bg-muted border border-border'}`}>
+                      ${day <= dailyStreakDay ? 'bg-primary/20 border border-primary/50' : 'bg-muted border border-border'}`}>
                       {day}
                     </div>
                     <span className="text-xs">{day * 50}</span>
                   </div>
                 ))}
               </div>
+              <Button 
+                onClick={handleClaimDailyStreak}
+                disabled={dailyClaimDone}
+                className="w-full"
+              >
+                {dailyClaimDone ? "Already Claimed Today" : `Claim ${dailyStreakDay * 50} Coins`}
+              </Button>
             </div>
           </CardContent>
         </Card>
